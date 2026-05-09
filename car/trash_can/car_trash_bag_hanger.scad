@@ -29,7 +29,7 @@ $r_corner = 10; // outer corner radius
 
 // ─── Hook geometry ──────────────────────────────────────────
 $hook_wall = 6;
-$hook_d = 25;
+$hook_d = 28;
 $hook_l = $hook_d * 2;
 $hook_base_d = 20;
 $space_between_hooks = 145;
@@ -45,13 +45,15 @@ $insert_depth = 8;
 // ─── Lid ────────────────────────────────────────────────────
 $lid_margin = 8;
 $lid_depth = 30;
-$lid_vert_margin = 3; // extra clearance around hook column
+$lid_vert_margin = 2; // extra clearance around hook column
 
 // ─── Hinge ──────────────────────────────────────────────────
-$hinge_base = 15;     // width between pivot points
-$hinge_h = 9;         // height of the hinge ear
+$hinge_base = 15;       // width between pivot points
+$hinge_h = 9;           // height of the hinge ear
 $hinge_bolt_d = 6.5;    // bolt hole diameter
-$hinge_thickness = 7; // extrusion depth
+$hinge_thickness = 8;   // extrusion depth
+$hinge_nut_flat = 11.5; // nut width across flats + 0.5 mm tolerance
+$hinge_nut_d = 5;       // nut pocket depth + 0.5 mm tolerance
 
 // ─── Utility: rounded rectangle (2D) ────────────────────────
 // Produces a [w × h] rectangle with corner radius r.
@@ -61,23 +63,36 @@ module rrect(w, h, r)
 }
 
 // ─── Hinge ear (3D) ─────────────────────────────────────────
-// Triangular ear extruded to $hinge_thickness with a bolt hole
-// at the apex.  The two base corners are at the origin and
-// [$hinge_base, 0]; the apex is at [$hinge_base/2, $hinge_h].
-module hinge()
+// Triangular ear extruded to $hinge_thickness with a bolt
+// through-hole at the apex.  nut_side = "left" cuts a hex nut
+// pocket from z = -1; "right" from z = 4; "none" skips it.
+module hinge(nut_side = "none")
 {
-	linear_extrude($hinge_thickness) difference()
+	difference()
 	{
-		hull()
+		linear_extrude($hinge_thickness) difference()
 		{
-			circle(1);
-			translate([ $hinge_base, 0 ])
-			circle(1);
-			translate([ $hinge_base / 2, $hinge_h ])
-			circle($hinge_h * 2 / 3);
+			hull()
+			{
+				circle(1);
+				translate([ $hinge_base, 0 ])
+				circle(1);
+				translate([ $hinge_base / 2, $hinge_h ])
+				circle($hinge_h * 2 / 3);
+			}
+			translate([ $hinge_base / 2, $hinge_h * 2 / 3 ])
+			circle($hinge_bolt_d / 2);
 		}
-		translate([ $hinge_base / 2, $hinge_h * 2 / 3 ])
-		circle($hinge_bolt_d / 2);
+		if (nut_side == "left")
+		{
+			translate([ $hinge_base / 2, $hinge_h * 2 / 3, -1 ])
+			cylinder(h = $hinge_nut_d, r = $hinge_nut_flat / sqrt(3), $fn = 6);
+		}
+		else if (nut_side == "right")
+		{
+			translate([ $hinge_base / 2, $hinge_h * 2 / 3, 4 ])
+			cylinder(h = $hinge_nut_d, r = $hinge_nut_flat / sqrt(3), $fn = 6);
+		}
 	}
 }
 
@@ -123,13 +138,13 @@ module full_hook()
 // mounting column, facing inward to mate with the lid hinges.
 module hook_hinges()
 {
-	translate([ -6, ($l - $hook_base_l) / 2 + $hinge_thickness/2 + 1, 0 ])
+	translate([ -6, ($l - $hook_base_l) / 2 + $hinge_thickness / 2 + 1, 0 ])
 	rotate([ 90, 180, 0 ])
-	hinge();
+	hinge(nut_side = "left");
 
 	translate([ -6, ($l - $hook_base_l) / 2 + $hook_base_l + 3, 0 ])
 	rotate([ 90, 180, 0 ])
-	hinge();
+	hinge(nut_side = "right");
 }
 
 // ─── Base frame ─────────────────────────────────────────────
@@ -183,12 +198,12 @@ module insert()
 // the top edge.
 module lid_hinge()
 {
-	translate([ -$lid_margin, ($l - $hook_base_l) / 2 - $lid_vert_margin - $hinge_thickness, $lid_depth * 0.6 ])
+	translate([ -$lid_margin, ($l - $hook_base_l) / 2 - 2 * $lid_vert_margin - $hinge_thickness, $lid_depth * 0.6 ])
 	{
 		color("blue") rotate([ 270, 90, 0 ])
 		hinge();
 
-		color("blue") translate([ 0, $hook_base_l + $lid_vert_margin * 2 + $hinge_thickness, 0 ])
+		color("blue") translate([ 0, $hook_base_l + $lid_vert_margin * 4 + $hinge_thickness, 0 ])
 		rotate([ 270, 90, 0 ])
 		hinge();
 	}
@@ -215,8 +230,8 @@ module lid()
 		}
 
 		// Slot to clear the hook column (main body)
-		translate([ -$hook_base_d, ($l - $hook_base_l) / 2 - $lid_vert_margin, $base_wall-5 ])
-		linear_extrude(40) square([ $hook_base_d, $hook_base_l + $lid_vert_margin * 2 ]);
+		translate([ -$hook_base_d, ($l - $hook_base_l) / 2 - 2 * $lid_vert_margin, $base_wall - 5 ])
+		linear_extrude(40) square([ $hook_base_d, $hook_base_l + $lid_vert_margin * 4 ]);
 
 		// Wider slot near the top to clear the hinge ears
 		translate([ -$hook_base_d, -$lid_margin, $lid_depth * 0.635 ])
@@ -233,17 +248,14 @@ color("purple")
 
     difference()
 {
-color("grey") 
-// lid();
-full_base();
-
+	lid();
+	// full_base();
 
 	translate([ 25, -80, -10 ])
 	cube([ 200, 400, 100 ]);
 }
 
-// color("purple")
-// 	full_base();
+// color("purple") full_base();
 
 // translate([ 0, 0, -20 ])
 // color("pink") insert();
