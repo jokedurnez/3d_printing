@@ -8,22 +8,22 @@
 // Hinges on the hook column and lid allow the lid to pivot open.
 //
 // Parts and preview colours:
-//   full_hook  — purple, z =   0
-//   base       — purple, z =   0
-//   hook_hinges— purple, z =   0
-//   insert     — pink,   z = -20
-//   lid        — grey,   z = -20
+//   full_hook   — purple, z =   0
+//   base        — purple, z =   0
+//   hook_hinges — purple, z =   0
+//   insert      — pink,   z = -10
+//   lid         — grey,   z = -17
 // ============================================================
 
 // ─── Resolution ─────────────────────────────────────────────
 $fn = 90;
 
 // ─── Overall frame dimensions ───────────────────────────────
-$w = 200; // frame width
+$w = 170; // frame width
 $l = 230; // frame length
 
 // ─── Base frame ─────────────────────────────────────────────
-$base_thickness = 1;
+$base_thickness = 10;
 $base_wall = 8;
 $r_corner = 10; // outer corner radius
 
@@ -36,23 +36,23 @@ $space_between_hooks = 145;
 $hook_base_l = $space_between_hooks + 2 * $hook_wall + $hook_d;
 
 // ─── Shell wall thickness (shared by insert and lid) ────────
-$thickness = 3;
+$thickness = 2;
 
 // ─── Insert ─────────────────────────────────────────────────
-$insert_margin = 6;
+$insert_margin = 2;
 $insert_depth = 8;
 
 // ─── Lid ────────────────────────────────────────────────────
 $lid_margin = 8;
 $lid_depth = 30;
-$lid_vert_margin = 2; // extra clearance around hook column
+$lid_vert_margin = 1.7; // extra clearance around hook column
 
 // ─── Hinge ──────────────────────────────────────────────────
 $hinge_base = 15;       // width between pivot points
 $hinge_h = 9;           // height of the hinge ear
 $hinge_bolt_d = 6.5;    // bolt hole diameter
 $hinge_thickness = 8;   // extrusion depth
-$hinge_nut_flat = 11.5; // nut width across flats + 0.5 mm tolerance
+$hinge_nut_flat = 9.5; // nut width across flats + 0.5 mm tolerance
 $hinge_nut_d = 5;       // nut pocket depth + 0.5 mm tolerance
 
 // ─── Utility: rounded rectangle (2D) ────────────────────────
@@ -85,12 +85,12 @@ module hinge(nut_side = "none")
 		}
 		if (nut_side == "left")
 		{
-			translate([ $hinge_base / 2, $hinge_h * 2 / 3, -1 ])
+			translate([ $hinge_base / 2, $hinge_h * 2 / 3, -1.5 ])
 			cylinder(h = $hinge_nut_d, r = $hinge_nut_flat / sqrt(3), $fn = 6);
 		}
 		else if (nut_side == "right")
 		{
-			translate([ $hinge_base / 2, $hinge_h * 2 / 3, 4 ])
+			translate([ $hinge_base / 2, $hinge_h * 2 / 3, 5 ])
 			cylinder(h = $hinge_nut_d, r = $hinge_nut_flat / sqrt(3), $fn = 6);
 		}
 	}
@@ -159,6 +159,9 @@ module base()
 	}
 }
 
+// ─── Full base assembly ──────────────────────────────────────
+// Combines the hook column, base frame, and hinge ears into
+// a single printable part.
 module full_base()
 {
 	full_hook();
@@ -183,7 +186,7 @@ module insert()
 
 	// Upstanding walls — grip the bag
 	linear_extrude($thickness + $insert_depth)
-	    translate([ $base_wall + $insert_margin / 2, $base_wall + $insert_margin / 2 ])
+	translate([ $base_wall + $insert_margin / 2, $base_wall + $insert_margin / 2 ])
 	difference()
 	{
 		rrect($w - 2 * $base_wall - $insert_margin, $l - 2 * $base_wall - $insert_margin, $r_corner);
@@ -226,7 +229,7 @@ module lid()
 			// Interior cavity — opens from $thickness up
 			translate([ $base_wall / 2, $base_wall / 2, $thickness ])
 			linear_extrude($lid_depth + 1)
-			    rrect($w + 2 * $lid_margin - $base_wall, $l + 2 * $lid_margin - $base_wall, $r_corner - $base_wall / 2);
+			rrect($w + 2 * $lid_margin - $base_wall, $l + 2 * $lid_margin - $base_wall, $r_corner - $base_wall / 2);
 		}
 
 		// Slot to clear the hook column (main body)
@@ -242,23 +245,26 @@ module lid()
 }
 
 // ────────────────────────────────────────────────────────────
-// Preview — parts offset vertically for visual separation
+// Preview — uncomment parts to inspect individually
 // ────────────────────────────────────────────────────────────
-color("purple")
-
-    difference()
-{
-	lid();
-	// full_base();
-
-	translate([ 25, -80, -10 ])
-	cube([ 200, 400, 100 ]);
-}
 
 // color("purple") full_base();
 
-// translate([ 0, 0, -20 ])
+// translate([ 0, 0, -10 ])
 // color("pink") insert();
 
 // translate([ 0, 0, -17 ])
-// color("grey") lid();
+color("grey") lid();
+
+//     difference()
+// {
+// lid();
+// // full_base();
+// // insert();
+
+
+// 	translate([ 25, -80, -10 ])
+// 	cube([ 200, 400, 100 ]);
+// }
+
+// hinge(nut_side="right");
