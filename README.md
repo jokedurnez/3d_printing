@@ -1,6 +1,6 @@
 # 3D Printing
 
-Parametric 3D models for everyday life, designed in OpenSCAD and printed on an Ender 3 S1.
+Parametric 3D models for everyday life, designed in OpenSCAD and printed on a Bambu A1.
 
 ## Projects
 
